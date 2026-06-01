@@ -2,31 +2,43 @@
 
 Este proyecto documenta la refactorización técnica de tres escenarios de código acoplado aplicando los principios SOLID.
 
-## Acciones Realizadas
+## 1. Debate de Soluciones Posibles
 
-### 🛠️ Configuración del Entorno
-- Se inicializó el proyecto con **TypeScript** y se configuró `tsconfig.json`.
-- Se instaló y configuró **Jest** junto con `ts-jest` para la ejecución de pruebas unitarias.
-- Se configuró el entorno de **Git**, incluyendo un archivo `.gitignore` para excluir dependencias y archivos temporales.
+Durante el proceso de diseño, se consideraron diversas alternativas para resolver el acoplamiento:
 
-### 📦 Refactorización del Sistema de Envíos (Problema 1)
-- **Separación de Responsabilidades**: Se extrajo la lógica de cálculo de costos, procesamiento de pagos y notificaciones fuera de `OrderService`.
-- **Implementación de Interfaces**: Se crearon las interfaces `ShippingMethod` y `PaymentMethod`.
-- **Extensibilidad**: Se añadió la clase `DroneShipping` como prueba de que el sistema permite nuevos métodos sin modificar el código base.
+- **En el Sistema de Envíos (SRP/OCP)**:
+    - *Opción A*: Usar un `switch` o `if/else` gigante para manejar nuevos métodos. Se descartó porque violaba el OCP (obligaba a modificar la clase principal cada vez).
+    - *Solución elegida*: **Interfaces y Polimorfismo**. Se decidió que cada método de envío y pago sea una clase independiente. Esto permite que el sistema crezca horizontalmente sin riesgo de romper la lógica existente.
+  
+- **En el Procesador de Documentos (LSP/ISP)**:
+    - *Opción A*: Mantener una sola interfaz y manejar los errores con `try/catch`. Se descartó porque rompe el contrato de la interfaz (LSP) y ensucia el código cliente.
+    - *Solución elegida*: **Segregación de Interfaces (ISP)**. Al dividir la interfaz en capacidades específicas (`Openable`, `Editable`), el sistema detecta errores en tiempo de compilación y no en ejecución.
 
-### 📄 Refactorización del Procesador de Documentos (Problema 2)
-- **Segregación de Interfaces**: Se dividió la interfaz única `DocumentHandler` en tres interfaces específicas: `Openable`, `Editable` y `Savable`.
-- **Corrección de Contratos**: Se modificó `PDFDocument` para que solo implemente `Openable`, eliminando las excepciones por métodos no soportados.
-- **Seguridad de Tipos**: Se ajustó `DocumentProcessor` para que sus métodos soliciten únicamente las interfaces que realmente necesitan.
+- **En el Interruptor Rígido (DIP)**:
+    - *Opción A*: Crear múltiples métodos en el Switch (`operateBulb`, `operateFan`). Se descartó por el alto acoplamiento.
+    - *Solución elegida*: **Inversión de Dependencias**. El Switch no sabe qué está controlando, solo sabe que el objeto cumple con la interfaz `Switchable`. Esto hace que el hardware sea totalmente intercambiable.
 
-### 🔌 Refactorización del Interruptor (Problema 3)
-- **Inversión de Dependencias**: Se creó la interfaz `Switchable` para abstraer el comportamiento de cualquier dispositivo electrónico.
-- **Inyección de Dependencias**: Se modificó la clase `Switch` para recibir el dispositivo a través del constructor en lugar de instanciarlo internamente.
-- **Polimorfismo**: Se crearon las clases `SmartLight` y `Fan` para demostrar que el mismo interruptor puede controlar múltiples tipos de dispositivos.
+## 2. Implementación de Soluciones
 
-### 🧪 Verificación y Despliegue
-- **Pruebas Automatizadas**: Se implementaron 9 tests unitarios en Jest que validan el comportamiento de cada solución refactorizada.
-- **Control de Versiones**: Se vinculó el proyecto al repositorio remoto y se realizó el despliegue de los cambios.
+Las soluciones se implementaron utilizando **TypeScript** para aprovechar el sistema de tipos fuerte, lo cual es fundamental para garantizar que los principios SOLID se respeten:
+
+- **Problem 1**: [ShippingSystem.ts](src/problem1/ShippingSystem.ts) implementa un orquestador que inyecta servicios de notificación y estrategias de envío/pago.
+- **Problem 2**: [DocumentProcessor.ts](src/problem2/DocumentProcessor.ts) utiliza tipos de intersección de TypeScript (`Openable & Editable & Savable`) para definir qué documentos requieren acceso total.
+- **Problem 3**: [HomeAutomation.ts](src/problem3/HomeAutomation.ts) demuestra el uso de Inyección de Dependencias básica por constructor.
+
+## 3. Pruebas Realizadas
+
+Se implementó una suite de 9 pruebas automatizadas con **Jest** para validar que las refactorizaciones no alteraran el comportamiento esperado del negocio:
+
+- **Tests de Integración (Problema 1)**: Verifican que la combinación de diferentes estrategias de envío y pago resulte en el cálculo correcto del total y la notificación adecuada.
+- **Tests de Contrato (Problema 2)**: Aseguran que un PDF no pueda ser procesado por métodos que requieran edición, evitando excepciones en tiempo de ejecución.
+- **Tests de Abstracción (Problema 3)**: Validan que el Switch sea agnóstico al dispositivo y funcione correctamente con luces y ventiladores.
+
+## Acciones Técnicas Realizadas
+- Inicialización de proyecto TS y Jest.
+- Configuración de Git y repositorio remoto.
+- Refactorización completa de los 3 escenarios propuestos.
+- Creación de documentación técnica y manual de ejecución.
 
 ## Ejecución de Pruebas
 ```bash
